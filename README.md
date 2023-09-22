@@ -1,8 +1,8 @@
 # FloatingWAYS
-**Floating** **W**ind **A**rray la**Y**out de**S**ign: a python tool to design passively self-adjusting floating wind array layouts to increase the annual energy production.
+**Floating** **W**ind **A**rray la**Y**out de**s**ign: a python tool to design passively self-adjusting floating wind array layouts to increase the annual energy production.
 
 [![License: Apache v2](https://img.shields.io/badge/License-Apache%20v2-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0)
-[![DOI](https://zenodo.org/badge/535690417.svg)](https://zenodo.org/badge/latestdoi/535690417)
+[![DOI](https://zenodo.org/badge/532945607.svg)](https://zenodo.org/badge/latestdoi/532945607)
 
 ## Workflow
 The workflow of FloatingWAY is shown in the figure below:
@@ -22,6 +22,11 @@ The workflow of FloatingWAY is shown in the figure below:
 Please install these packages before working with FloatWALpy.
 
 
+## Citation
+For citation please cite the following paper
+
+Mahfouz, M. Y. and Cheng, P. W.: A passively self-adjusting floating wind farm layout to increase the annual energy production, Wind
+Energy, 26, 251–265, https://doi.org/10.1002/we.2797, 2023.
 ## License
 Copyright 2022 Stuttgart Wind Energy (SWE)
 
