@@ -2,7 +2,7 @@
 **Floating** **W**ind **A**rray la**Y**out de**s**ign: a python tool to design passively self-adjusting floating wind array layouts to increase the annual energy production.
 
 [![License: Apache v2](https://img.shields.io/badge/License-Apache%20v2-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0)
-[![DOI](https://zenodo.org/badge/532945607.svg)](https://zenodo.org/badge/latestdoi/532945607)
+[![DOI](https://zenodo.org/badge/535690417.svg)](https://zenodo.org/badge/latestdoi/535690417)
 
 ## Workflow
 The workflow of FloatingWAY is shown in the figure below:
