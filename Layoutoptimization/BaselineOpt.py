@@ -70,11 +70,11 @@ def savelayout(layout,path,filename):
 
 
 ############## Inputs  ############## 
-mindist = 4
-spc = 6 # maximum spacing at the beginning of the simulation for boundary creation
+mindist = 3
+spc = 5 # maximum spacing at the beginning of the simulation for boundary creation
 shape ='square'
-no_circles_squares =2 
-no_turbines = 25 
+no_circles_squares =1 
+no_turbines = 9 
 file_number = f'{mindist}{mindist}{mindist}{no_turbines}{no_turbines}{no_turbines}'
 windrose = 'iea'
 
@@ -87,7 +87,7 @@ angle=1
 
 
 opt_baseline_file =f'/SNOPTlayoutnew_{shape}_{no_turbines}T_{windrose}.csv'
-sum_print='SNOPTlayoutnew_{shape}_{no_turbines}T_{windrose}.out'
+sum_print=f'SNOPTlayoutnew_{shape}_{no_turbines}T_{windrose}.out'
 
 
 # Initialize the FLORIS interface fi
@@ -126,7 +126,7 @@ if shape=='square':
                             min(layout0[0])-0.01*D),decimals=2)
     boundaries = [[x,y] for x, y in zip(boundaries_x, boundaries_y)]
     boundaries = pd.DataFrame(boundaries, columns=['x','y'])
-    boundaries=boundaries.values.tolist()
+    boundaries = boundaries.values.tolist()
 
 
 boundarypolygon = Polygon(boundaries)
@@ -172,7 +172,7 @@ optOptions={"Major feasibility tolerance": 1e-6,
               "Scale option":0 ,
               # "Function precision": 1e-6,
             # "Major optimality tolerance": 5e-5,
-            "Major optimality tolerance": 1e-3,
+            "Major optimality tolerance": 1e-5,
             # "Derivative level":1, 
             "iPrint": int(file_number)-1,
             "iSumm":  int(file_number),
@@ -189,14 +189,3 @@ print("=====================================================")
 
 
 savelayout(layout, path+ '/BaselineOptimization' , opt_baseline_file)
-pdb.set_trace()
-
-
-# 18, 19 square 9 turbines
-# 16, 17 square 25 turbines
-# 14, 15 circle 37 turbines
-# 12, 13 circle 19 turbines
-# 122, 133 circle 19 turbines rounded
-# 1222, 1333 circle 19 turbines rounded FDR
-# 144, 155 circle 37 turbines shapely
-# 1012, 1013 circle 19 turbines  np.arange(0,370,10) playing with boarders no shapely

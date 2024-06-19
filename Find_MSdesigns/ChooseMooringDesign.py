@@ -7,7 +7,6 @@ Created on Tue Dec 20 18:33:04 2022
 """
 import time
 import pandas as pd
-# pd.options.mode.chained_assignment = None  # default='warn'
 import numpy as np
 import pdb
 from floris.tools import FlorisInterface
@@ -65,8 +64,7 @@ def delta_energy(wd,ws,freq,layout0,newlayoutdict,plot,AEP_initial,AEP_dir):
     return delta_E
 
 def layoutfromMoorSystem(TurbineMoorDesign,Floris_perp,Xdiff,Ydiff): 
-    # Xdiff=pd.read_csv(Xdiff_file).round(decimals=2)
-    # Ydiff=pd.read_csv(Ydiff_file).round(decimals=2)
+
     
     TurbineLayoutX=pd.DataFrame()
     TurbineLayoutY=pd.DataFrame()
@@ -93,25 +91,27 @@ def layoutfromMoorSystem(TurbineMoorDesign,Floris_perp,Xdiff,Ydiff):
         NewLayoutY.loc[i,:]=TurbineLayoutY.values
         TurbineLayoutX=pd.DataFrame()
         TurbineLayoutY=pd.DataFrame()    
-    # NewLayoutX.to_csv(outputlayoutxfile, index=False)
-    # NewLayoutY.to_csv(outputlayoutyfile, index=False)
+
     NewLayoutdict={"X":NewLayoutX,"Y":NewLayoutY}
     return NewLayoutdict
-    # print('Layout after considering mooring systems is saved')
-    
-# path= r"D:\Moordyn\moorpy\MoorPy\Outputs"
-# path =r"D:\Moordyn\moorpy\MoorPy\Outputsnewlayout"
 
 ########### Inputs start  
-mindist = 4
+mindist = 6 # this is the small number
 spc = 6 # maximum spacing at the beginning of the simulation for boundary creation
-shape ='circle'
-no_circles_squares =1 
-no_turbines = 7 
+shape ='square'
+no_turbines = 9 
 file_number = f'{mindist}{mindist}{no_turbines}{no_turbines}'
 windrose = 'iea'
-
+tolerance=120
+filterMS = 'designonly' #designonly or designheading  
+MooringDatabase = 'L14' # L04 or L03 or L05. L03 means line length 03,05,07, anchor radius 2.5, 3D. L04 line length 04,06,08 anc radius 2.5, 3.5D. L05 is 04 but with yaw restricted to 5 at 25 m/s. L06 yaw angle restricted to +-3 at 10m/s.L07 yaw angle restricted to +-4 at 10m/s
+no_circles_squares =1 
+D=240
 Ti = 0.06
+
+print('================================')
+print(f'min distance = {mindist} turbine spacing = {spc}  ')
+print('================================')
 
 ############################ 
 path0=fr"../Results_{windrose}"
@@ -120,23 +120,21 @@ opt_baseline_file ='/SNOPTlayoutnew_'+shape+'_'+str(no_turbines)+'T_iea.csv'
 opt_dyn_layout_file='/OptimumDynamicfarmlayout_'+shape+'_'+str(no_turbines)+'T_iea_TI_'+str(Ti)+'.csv'
 opt_aep_sum_file ='/AEP_summary_per_winddir_'+shape+'_'+str(no_turbines)+'T_iea_TI_'+str(Ti)+'.csv'
 
-outputfile='/TBMDfinal_Yaw5deg_'+shape+'_'+str(no_turbines)+'T_iea.csv'
-outputfile_process='/TBMD_notfinal_Yaw5deg_'+shape+'_'+str(no_turbines)+'T_iea.csv'
+outputfile=f'/TBMDfinal_tol_{tolerance}_filter_{filterMS}_MooringDatabase_{MooringDatabase}'+'.csv'
+outputfile_process=f'/TBMD_notfinal_tol_{tolerance}_filter_{filterMS}_MooringDatabase_{MooringDatabase}'+'.csv'
 
 # Mooring Database inputs
-MoorPy_disp= pd.read_csv(path0+'/MooringDatabase_Yaw5deg/WindSpeed_10'+ '/perp_diff_Sway.csv').round(decimals=2) # The perpendicular displacement of each mooring design
-MooringPermMatrix= pd.read_csv(path0+'/MooringDatabase_Yaw5deg/WindSpeed_10'+ '/Final_PermMatrix.csv') # the design parameters vof each mooring system
-Xdiff_file=path0+'/MooringDatabase_Yaw5deg/WindSpeed_10'+ '/Xdiff_Surge.csv' # The positions achieved by each mooring design in each wind dir (x-axis)
-Ydiff_file=path0+'/MooringDatabase_Yaw5deg/WindSpeed_10'+ '/Xdiff_Sway.csv' # The positions achieved by each mooring design in each wind dir (y-axis)
+MoorPy_disp= pd.read_csv(path0+f'/MooringDatabase_{MooringDatabase}/WindSpeed_10'+ '/perp_diff_Sway.csv').round(decimals=2) # The perpendicular displacement of each mooring design
+MooringPermMatrix= pd.read_csv(path0+f'/MooringDatabase_{MooringDatabase}/WindSpeed_10'+ '/Final_PermMatrix.csv') # the design parameters vof each mooring system
+Xdiff_file=path0+f'/MooringDatabase_{MooringDatabase}/WindSpeed_10'+ '/Xdiff_Surge.csv' # The positions achieved by each mooring design in each wind dir (x-axis)
+Ydiff_file=path0+f'/MooringDatabase_{MooringDatabase}/WindSpeed_10'+ '/Xdiff_Sway.csv' # The positions achieved by each mooring design in each wind dir (y-axis)
 
-MooringPermMatrix['ang1']=myround(MooringPermMatrix['ang1'], base=10)
-MooringPermMatrix['ang2']=myround(MooringPermMatrix['ang2'], base=10)
-MooringPermMatrix['ang3']=myround(MooringPermMatrix['ang3'], base=10)
+
 
 # pdb.set_trace()
 
 print('================================')
-print(f'{windrose} {no_turbines} Turbines Yaw 5 deg')
+print(f'tol = {tolerance} filter = {filterMS}  Mooring database = {MooringDatabase}')
 print('================================')
 
 # Windrose parameters
@@ -156,6 +154,7 @@ if windrose =='alpha':
     
 freq=np.transpose(np.array([freq_d]))
 
+
 # wind farm layout same as the one used in Pyoptsparsetry1
 layoutdf=pd.read_csv(path+ '/BaselineOptimization' +opt_baseline_file)
 
@@ -166,30 +165,28 @@ layout0=(np.array(layoutdf.x).tolist(),
 fi = FlorisInterface('../Inputs/gch15MW.yaml')
 fi.floris.flow_field.turbulence_intensity=0.06
 # # Input from Pyoptsparsetry1
-# Floris_X= pd.read_csv(path+ '\Position_X_FLORIS.csv') # the positions we want the turbines to be at every wind direction (x-axis)
-# Floris_Y= pd.read_csv(path+ '\Position_Y_FLORIS.csv') # the positions we want the turbines to be at every wind direction (y-axis)
 Floris_perp= pd.read_csv(path+ '/SingleWIndDir_Opt'+opt_dyn_layout_file)
 AEP_angle= pd.read_csv(path+ '/SingleWIndDir_Opt'+opt_aep_sum_file) # I think maybe we dont need to read this file at all and get the FLORIS wind dir from the windrose data only
-# pdb.set_trace() 
+
 
 # Mooring Database inputs
 Xdiff=pd.read_csv(Xdiff_file).round(decimals=2)
 Ydiff=pd.read_csv(Ydiff_file).round(decimals=2)
 
-tolerance=5
+
 ########### Inputs end 
 
 Floris_perp.columns=Floris_perp.columns.astype(str).astype(float)
 
 
 ########### calculating the initial AEP
-# t0=time.time()
+
 fi.reinitialize(layout=layout0,
                 wind_directions=wd,
                 wind_speeds=ws)
-# t1=time.time()
+
 AEP_initial=fi.get_farm_AEP(freq=freq)
-# t2=time.time()
+
 AEP_dir=pd.DataFrame()
 for ww in range(len(wd)):
 
@@ -197,23 +194,12 @@ for ww in range(len(wd)):
                     layout_y=layout0[1],
                     wind_directions=[wd[ww]],
                     wind_speeds=ws) 
-    # t2=time.time()
-    
+
     AEP_dir.loc[0,wd[ww]]=fi.get_farm_AEP([freq[ww]],freq_warn=0)
     
 print("=====================================================")
 print('AEP_initial='+str(AEP_initial*10**-9))
 print("=====================================================")
-# ww=0
-# t0=time.time()
-# fi.reinitialize(layout=layout0,
-#                 wind_directions=[wd[ww]],
-#                 wind_speeds=ws) 
-# t1=time.time()
-
-# AEP0=fi.get_farm_AEP([freq[ww]],freq_warn=0)
-
-# t2=time.time()
 
 TurbinesAngles=pd.DataFrame(np.tile(AEP_angle['MoorPy_angles_rnd'].transpose(),(len(Floris_perp),1))).transpose()
 TurbinesAngles.columns=TurbinesAngles.columns.astype(str).astype(float)
@@ -288,17 +274,11 @@ for count in range(len(Floris_perp.columns)):
             col['MoorPy_ang'] = Designs.columns # columns names of designs that have same design (the column names are the same for all designs so sure there is a better way to do this)
             Designs.rename(columns=col.set_index('MoorPy_ang')['Floris_ang'],inplace=True) # renaming the columns with the rotated values
             Designs=Designs.reindex(columns=Floris_perp.columns) # reordering columns
-            # totaldiff=totaldiff.append(abs(Designs-Floris_perp.loc[t,:])) # difference between what the mooring system can achieve and what we want it to achieve
             totaldiff=pd.concat([totaldiff,abs(Designs-Floris_perp.loc[t,:])]) # difference between what the mooring system can achieve and what we want it to achieve
-            # diffX=pd.DataFrame()
-            # diffX=diffX.append(abs(Designs-Floris_perp.loc[t,:]))
             diffX=pd.DataFrame()
             diffX=pd.concat([diffX,abs(Designs-Floris_perp.loc[t,:])])
-            # pdb.set_trace()
             Turbine.loc[Turbine[(Turbine.Design.isin(totaldiff.index))&(Turbine.deltaAngle==Turbine['deltaAngle'].unique()[j])].index,'totaldiff']=np.sum(diffX,axis=1).values # this line maybe needs to get out of the loop
-            
-            # pdb.set_trace() 
-        # pdb.set_trace() 
+
 
         ###### Can be a function on its own
         ###### We pick the design with the minimum distance diff and unique heading angles
@@ -311,18 +291,16 @@ for count in range(len(Floris_perp.columns)):
         MooringDesigns['Design']=MooringDesigns.index
         MooringDesigns.index=Turbine.index
         MooringDesigns['deltaAngle']=Turbine['deltaAngle'].copy()
-        # pdb.set_trace()
-        Turbine=Turbine.iloc[MooringDesigns.drop_duplicates(subset=['ang1','ang2','ang3'],keep='first').index,:]
-        # Turbine=Turbine.iloc[MooringDesigns.drop_duplicates(subset=['ang1','ang2','ang3','deltaAngle'],keep='first').index,:] #should be a flag to use this or the line above it
+        if filterMS == 'designonly':
+            Turbine=Turbine.iloc[MooringDesigns.drop_duplicates(subset=['ang1','ang2','ang3'],keep='first').index,:]
+        if filterMS == 'designheading':
+            Turbine=Turbine.iloc[MooringDesigns.drop_duplicates(subset=['ang1','ang2','ang3','deltaAngle'],keep='first').index,:] #should be a flag to use this or the line above it
         Turbine=Turbine.reset_index(drop=True)
         ###### Can be a function on its own
         Turbinedict["Turbine_%s" %(t)]=Turbine
-    # pdb.set_trace() 
-
     WinddirTurbinedict["Winddir_%s" %(int(TurbinesAngles.iloc[count,0]))]=Turbinedict
     
     
-# pdb.set_trace() 
 ###### This just reformalates the way WinddirTurbinedict such that it's the turbine and then another dict including the wind direction.
 ###### In the previous part we should loop first over wind turbines then over wind directions
 ###### I believe there is a way to directly write Turbinefullsysall without going through writing WinddirTurbinedict
@@ -335,25 +313,19 @@ for t in range(len(Floris_perp)):
         Turbinenum=WinddirTurbinedict["Winddir_%s" %(int(TurbinesAngles.loc[i,0]))]["Turbine_%s" %(t)].copy()
         Turbinenum_total.append(Turbinenum)
         Turbine_i=pd.concat(Turbinenum_total, ignore_index=True)
-    # pdb.set_trace()
     Turbine_i['deltaAngle'].loc[Turbine_i['deltaAngle']<0]=Turbine_i['deltaAngle'].loc[Turbine_i['deltaAngle']<0]+360
-    # pdb.set_trace()
     Turbine_i=Turbine_i.drop_duplicates(keep='first')
     
     Turbine_i.sort_values(by=['totaldiff'], axis=0,ascending=True,inplace=True,ignore_index=True)    
     Turbinefullsysall["Turbine_%s" %(t)]=Turbine_i.copy()
     TBMD_max.loc[t,:]=Turbinefullsysall["Turbine_%s" %(t)].loc[0,:] # No more need to start TBMD_max with the designs highest totaldiff
-    # pdb.set_trace()
 
 
 
-# pdb.set_trace()
+
 ######## Just to define gain0. No other need for this
-# t1=time.time()
 Layoutdict=layoutfromMoorSystem(TBMD_max,Floris_perp,Xdiff,Ydiff)
-# t2=time.time()
-delta_E = delta_energy(wd,ws,freq,layout0,Layoutdict,0,AEP_initial,AEP_dir)  
-# t3=time.time()   
+delta_E = delta_energy(wd,ws,freq,layout0,Layoutdict,0,AEP_initial,AEP_dir)   
 gain0=sum(delta_E['delta_AEP'])
 print('gain0=')
 print(gain0)
@@ -367,16 +339,6 @@ TBMDfinal=TBMD_max.copy()
 
 ###################
 
-### new part only now
-# TBMDfinal=pd.read_csv(path+'/FinalMooringWFDesign'+outputfile_process)
-# Layoutdict=layoutfromMoorSystem(TBMDfinal,Floris_perp,Xdiff,Ydiff)
-# delta_E = delta_energy(wd,ws,freq,layout0,Layoutdict,0,AEP_initial,AEP_dir)  
-# gain0=sum(delta_E['delta_AEP'])
-# print('gain0=')
-# print(gain0)
-
-###################
-###################
 gainnew=10
 gainprev=0
 
@@ -406,15 +368,3 @@ while gainnew != gainprev:
     TBMDfinal.to_csv(path+'/FinalMooringWFDesign'+outputfile_process, index=False)
 
 TBMDfinal.to_csv(path+'/FinalMooringWFDesign'+outputfile, index=False)
-
-# pdb.set_trace()
-
-################### function to read output is needed
-# wht=pd.read_csv(path+'/TBMDfinal_short_aftercleaning_tol25.csv',index_col=False)
-# wht=pd.read_csv(path+'/TBMDfinal_new_SNOPT_tol5.csv',index_col=False)
-# wht=wht.iloc[:,1:4]
-# Layoutdict=layoutfromMoorSystem(wht,Floris_perp,Xdiff,Ydiff)
-# delta_E = delta_energy(wd,ws,freq,layout0,Layoutdict,0,AEP_initial)     
-# gain0=sum(delta_E['delta_AEP'])
-# print('gain0=')
-# print(gain0)       

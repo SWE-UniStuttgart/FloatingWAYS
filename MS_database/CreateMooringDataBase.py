@@ -697,8 +697,7 @@ fairR=42.5 #fairlead radius
 fair_depth=(15) #depth of fairlead
 
 #### Wind inputs
-# Thrust_wind=pd.read_csv(r'D:\Moordyn\moorpy\MoorPy\Activefloat_AeroThrust.csv',header=0,names=['WindSpeed','Thrust'])
-# Thrust_wind.sort_values(by=['Thrust'],ignore_index=True,inplace=True,ascending=False)
+
 Faero=np.array([2148821.67906326,-6262.2958047442,-15538.6832881499])
 Maero=np.array([17214575.6193484,3892317.0989765,2791002.68346595])
 aero_angle=np.arange(0,360,5)
@@ -734,7 +733,6 @@ Const_dict={
 ########## Inputs End ##########
 
 
-# F=FAero_windD(Faero,aero_angle)
 
 if not os.path.exists(path0):
     os.makedirs(path0)
@@ -748,11 +746,11 @@ else:
 if not os.path.exists(path_oufiles):
     os.makedirs(path_oufiles)
 
-# PermMatrix_full = pd.read_csv(path_oufiles + '/NOCONSTRAINTS_PermMatrix.csv')     
+
 PermMatrix_full=np.array_split(PermMatrix_full,12)
 Trymatrix = PermMatrix_full[split]
 Trymatrix = Trymatrix.reset_index(drop=True)
-# pdb.set_trace()
+
 del PermMatrix_full
 gc.collect()
 SystemList = CreateMoorPySystems(Trymatrix,rCG)
@@ -781,7 +779,7 @@ Displacements_dict_forconstraints = {
     'SystemList':Displacements_dict['SystemList'].copy()
         }
 
-# pdb.set_trace()
+
 
 Displacements_dict_constrained = MotionConstraints(Displacements_dict_forconstraints , Const_dict)
 
@@ -799,6 +797,6 @@ Displacements_dict_constrained, Displacements_diff_rotated_tran_dict = Clean_Sta
 
 
 Savefiles(Displacements_diff_rotated_tran_dict,path_oufiles,'/perp_diff_',keys=['Sway'],allkeys=0)
-# pdb.set_trace()
+
 
 

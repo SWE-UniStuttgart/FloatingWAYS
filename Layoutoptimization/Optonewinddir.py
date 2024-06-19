@@ -69,12 +69,12 @@ def myround(x, base=5):
     return base * round(x/base)
 
 ############## Inputs  ############## 
-mindist = 4
+mindist = 6
 spc = 6 # maximum spacing at the beginning of the simulation for boundary creation
-shape ='circle'
-no_circles_squares =2 
-no_turbines = 19 
-file_number = f'{mindist}{mindist}{no_turbines}{no_turbines}'
+shape ='square'
+no_circles_squares =1 
+no_turbines = 9
+file_number = f'{mindist}{mindist}{no_turbines}{no_turbines}{no_turbines}'
 windrose = 'iea'
 
 Ti = 0.06
@@ -116,10 +116,8 @@ if shape=='circle':
 if shape=='square':
     N_squares=no_circles_squares
     spacing=spc*D
-    spc=spc
-    spc=spc*D
-    y_coordinates=np.tile(np.arange(-spc*N_squares,spc*N_squares+spc,spc),1+N_squares*2)
-    x_coordinates=np.repeat(np.arange(-spc*N_squares,spc*N_squares+spc,spc),1+N_squares*2)
+    y_coordinates=np.tile(np.arange(-spacing*N_squares,spacing*N_squares+spacing,spacing),1+N_squares*2)
+    x_coordinates=np.repeat(np.arange(-spacing*N_squares,spacing*N_squares+spacing,spacing),1+N_squares*2)
     x_coordinates=np.round(x_coordinates)
     y_coordinates=np.round(y_coordinates)
     layout0= (x_coordinates.tolist(), y_coordinates.tolist())
@@ -134,12 +132,45 @@ if shape=='square':
     boundaries = pd.DataFrame(boundaries, columns=['x','y'])
     boundaries=boundaries.values.tolist()
 
+################Horns Rev############  
+
+if shape=='HornsRevall3':
+    
+    HornsRev_layout= pd.read_csv('../Inputs/HornsRev_layout.csv')
+    x = HornsRev_layout['x']
+    y = HornsRev_layout['y']
+    layout0= (x.tolist(), y.tolist())
+    
+    # boundaries_x=np.round((-6843-0.01*D,min(layout0[0])-0.01*D,
+    #                         6843,max(layout0[0])+0.01*D,
+    #                         -6843-0.01*D),decimals=2)
+    # boundaries_y=np.round((min(layout0[1])-0.01*D,max(layout0[1])+0.01*D,
+    #                         max(layout0[1])+0.01*D,min(layout0[1])-0.01*D,
+    #                         min(layout0[1])-0.01*D),decimals=2)
+    boundaries_x=np.round((-6843,min(layout0[0]),
+                            6843,max(layout0[0]),
+                            -6843),decimals=2)
+    boundaries_y=np.round((min(layout0[1]),max(layout0[1]),
+                            max(layout0[1]),min(layout0[1]),
+                            min(layout0[1])),decimals=2)
+    boundaries = [[x,y] for x, y in zip(boundaries_x, boundaries_y)]
+    boundaries = pd.DataFrame(boundaries, columns=['x','y'])
+    boundaries=boundaries.values.tolist()
+    
+# fig = plt.figure(figsize=(5,5),dpi=96)
+# ax = fig.add_subplot()
+# ax.plot(boundaries_x,boundaries_y)
+# ax.scatter(x,y)
+# plt.show()
 ############################  
 
-
-layoutdf=pd.read_csv(path+ '/BaselineOptimization' +opt_baseline_file)
-layout=(np.array(layoutdf.x).tolist(),
-        np.array(layoutdf.y).tolist())
+if shape=='HornsRevall3':
+    layout=layout0
+    del layout0
+else:  
+    layoutdf=pd.read_csv(path+ '/BaselineOptimization' +opt_baseline_file)
+    layout=(np.array(layoutdf.x).tolist(),
+            np.array(layoutdf.y).tolist())
 
 # Windrose parameters
 if windrose =='iea':
@@ -154,6 +185,35 @@ if windrose =='alpha':
     ws=[10, 10,  10,  10,    10,   10,    10,   10,    10,    10,    10,   10,   10,    10,   10,    10]
     freq_d=[0.0313,0.0402,0.0375, 0.0568,0.0558,0.0608, 0.0424,0.0564,0.0555, 0.1114,0.0932,0.1114, 0.0722,
           0.0743,0.0500, 0.0508]
+    
+if windrose =='HornsRev4':
+    print(' ########################### HornsRev windrose ############################')
+    f2 = [3.597152, 3.948682, 5.167395, 7.000154, 8.364547, 6.43485,
+                  8.643194, 11.77051, 15.15757, 14.73792, 10.01205, 5.165975]
+    # freq_d = np.array(f) / np.sum(f)
+    # wd=[0, 30 ,60, 90, 120, 150, 180.,  210, 240, 270, 300 , 330]
+    # ws=[10, 10,  10,  10,    10,   10,    10,   10,    10,    10,    10,   10 ]
+    
+    f = [7.000154, 14.73792]
+    freq_d = np.array(f) / np.sum(f2)
+    wd=[90, 270]
+    ws=[10, 10]
+
+if windrose =='HornsRevall3':
+    print(' ########################### HornsRev windrose all############################')
+    f2 = [3.597152, 3.948682, 5.167395, 7.000154, 8.364547, 6.43485,
+                  8.643194, 11.77051, 15.15757, 14.73792, 10.01205, 5.165975]
+    # freq_d = np.array(f) / np.sum(f)
+    # wd=[0, 30 ,60, 90, 120, 150, 180.,  210, 240, 270, 300 , 330]
+    # ws=[10, 10,  10,  10,    10,   10,    10,   10,    10,    10,    10,   10 ]
+    
+    f = [3.597152, 3.948682, 5.167395,  8.364547, 6.43485,
+                  8.643194, 11.77051, 15.15757,  10.01205, 5.165975]
+    freq_d = np.array(f) / np.sum(f2)
+    wd=[0, 30 ,60,  120, 150, 180.,  210, 240,  300 , 330]
+    ws=[10, 10,  10,  10,    10,   10,    10,   10,    10,    10]
+
+
     # #######################################################
 
 Windrose=pd.DataFrame()
@@ -204,9 +264,9 @@ for i in range(len(AEP_summary)):
                    # "Verify level": 3, 
                   "Scale option":0 ,
                   # "Function precision": 1e-6,
-                # "Major optimality tolerance": 5e-5,
+                "Major optimality tolerance": 1e-5,
                 # "Major optimality tolerance": 1e-7,  #what i will use for PhD isA
-                "Major optimality tolerance": 1e-6,  #what i will use for PhD isA
+                # "Major optimality tolerance": 1e-6,  #what i will use for PhD isA
                 # "Derivative level":1, 
                 "iPrint": int(file_number)-1,
                 "iSumm":  int(file_number),

@@ -10,7 +10,6 @@ import pandas as pd
 import numpy as np
 import pdb
 import moorpy as mp
-# from itertools import product 
 import os
 
 
@@ -579,13 +578,17 @@ def printMoorDyndfiles(SampleSystemList,mooringfilename):
 ########## Inputs Start ##########
 
 ########### Simulation input
-mindist = 4
+mindist = 6 # this is the small number
 spc = 6 # maximum spacing at the beginning of the simulation for boundary creation
-shape ='circle'
+shape ='square'
 no_circles_squares =1 
-no_turbines = 7 
-file_number = f'{mindist}{mindist}{no_turbines}{no_turbines}'
+no_turbines = 9 
 windrose = 'iea'
+
+tolerance=50
+filterMS = 'designonly' #designonly or designheading  
+MooringDatabase = 'L26' # L04 or L03. L03 means line length 03,05,07, anchor radius 2.5, 3D. L04 line length 04,06,08 anc radius 2.5, 3.5D
+
 
 #### Floater + turbine parameters
 mass=37181396.000 #floater + turbine mass
@@ -600,33 +603,28 @@ depth=200 #seabed depth
 fairR=42.5 #fairlead radius
 fair_depth=(15) #depth of fairlead
 
-WindSpeed=10
-yawang = 5
-Ti = 0.06
+WS= np.arange(4,26)
+
+
+Faero=np.array([2148821.67906326,-6262.2958047442,-15538.6832881499])
+Maero=np.array([17214575.6193484,3892317.0989765,2791002.68346595])
 mooringfilename = '/Turbine_' 
 ############################ 
 path0=fr"../Results_{windrose}"
 path1 =fr"../Results_{windrose}/Results_{mindist}_{spc}"
+
 path =path1 + r"/FinalMooringWFDesign"
 
 Aero_Forces=pd.read_csv('../Inputs/Aerodynamic_forces2.csv')
 #### Wind inputs
 
-Faero=np.array([2148821.67906326,-6262.2958047442,-15538.6832881499])
-Maero=np.array([17214575.6193484,3892317.0989765,2791002.68346595])
-Faero[0]=Aero_Forces.loc[0,str(WindSpeed)]
-Faero[1]=Aero_Forces.loc[1,str(WindSpeed)]
-Faero[2]=Aero_Forces.loc[2,str(WindSpeed)]
-Maero[0]=Aero_Forces.loc[3,str(WindSpeed)]
-Maero[1]=Aero_Forces.loc[4,str(WindSpeed)]
-Maero[2]=Aero_Forces.loc[5,str(WindSpeed)]
-aero_angle=np.arange(0,360,5)
+
 
 
 opt_baseline_file ='/SNOPTlayoutnew_'+shape+'_'+str(no_turbines)+'T_iea.csv'
 
-CustomisedMS= pd.read_csv(path+'/TBMDfinal_Yaw'+ str(yawang) + 'deg'+f'_{shape}_{no_turbines}T_iea.csv')
-PermMatrix= pd.read_csv(path0+'/MooringDatabase_Yaw'+ str(yawang) + 'deg'+'/WindSpeed_10/Final_PermMatrix.csv')
+CustomisedMS= pd.read_csv(path+f'/TBMDfinal_tol_{tolerance}_filter_{filterMS}_MooringDatabase_{MooringDatabase}'+'.csv')
+PermMatrix= pd.read_csv(path0+f'/MooringDatabase_{MooringDatabase}/WindSpeed_10'+ '/Final_PermMatrix.csv')
 MS_Designs=PermMatrix.loc[CustomisedMS.Design,:]
 
 MS_Designs['ang1']=MS_Designs['ang1'].values+CustomisedMS['deltaAngle'].values
@@ -642,28 +640,34 @@ MS_Designs.reset_index(drop=True,inplace=True)
 Trymatrix=MS_Designs.copy()
 Trymatrix.reset_index(drop=True,inplace=True)
 
-if not os.path.exists(path+f'/Turbines_{no_turbines}'):  os.makedirs(path+f'/Turbines_{no_turbines}')
-if not os.path.exists(path+f'/Turbines_{no_turbines}'+f'/WindSpeed_{WindSpeed}'):  os.makedirs(path+f'/Turbines_{no_turbines}'+f'/WindSpeed_{WindSpeed}/')
+if not os.path.exists(path+f'/Turbines_tol_{tolerance}_filter_{filterMS}_MooringDatabase_{MooringDatabase}'):  os.makedirs(path+f'/Turbines_tol_{tolerance}_filter_{filterMS}_MooringDatabase_{MooringDatabase}')
+
 
 SystemList = CreateMoorPySystems(Trymatrix,rCG)
-printMoorDyndfiles(SystemList ,path+f'/Turbines_{no_turbines}'+mooringfilename)
-# pdb.set_trace()
-Displacements0_dict = StaticEquilibrium_without_Force(SystemList.copy(),Trymatrix.copy())
-Displacements_dict = StaticEquilibrium_with_Force(list(Displacements0_dict['SystemList'][0]).copy(),Faero,Maero,Displacements0_dict['PermMatrix'].copy(),aero_angle)
-Displacements_diff_dict = delta_Displacement(Displacements0_dict, Displacements_dict, DOF=['Surge', 'Sway','Heave'])
+printMoorDyndfiles(SystemList ,path+f'/Turbines_tol_{tolerance}_filter_{filterMS}_MooringDatabase_{MooringDatabase}'+mooringfilename)
 
-# # Displacements0_dict = StaticEquilibrium_without_Force(list(Displacements_dict['SystemList'][0]),Displacements_dict['PermMatrix'].copy())
+for WindSpeed in WS:
+    Faero[0]=Aero_Forces.loc[0,str(WindSpeed)]
+    Faero[1]=Aero_Forces.loc[1,str(WindSpeed)]
+    Faero[2]=Aero_Forces.loc[2,str(WindSpeed)]
+    Maero[0]=Aero_Forces.loc[3,str(WindSpeed)]
+    Maero[1]=Aero_Forces.loc[4,str(WindSpeed)]
+    Maero[2]=Aero_Forces.loc[5,str(WindSpeed)]
+    aero_angle=np.arange(0,360,5)
+    Displacements0_dict = StaticEquilibrium_without_Force(SystemList.copy(),Trymatrix.copy())
+    Displacements_dict = StaticEquilibrium_with_Force(list(Displacements0_dict['SystemList'][0]).copy(),Faero,Maero,Displacements0_dict['PermMatrix'].copy(),aero_angle)
+    Displacements_diff_dict = delta_Displacement(Displacements0_dict, Displacements_dict, DOF=['Surge', 'Sway','Heave'])
+    
+    if not os.path.exists(path+f'/Turbines_tol_{tolerance}_filter_{filterMS}_MooringDatabase_{MooringDatabase}'+f'/WindSpeed_{WindSpeed}'):  os.makedirs(path+f'/Turbines_tol_{tolerance}_filter_{filterMS}_MooringDatabase_{MooringDatabase}'+f'/WindSpeed_{WindSpeed}/')
+    Savefiles(Displacements_dict,path,f'/Turbines_tol_{tolerance}_filter_{filterMS}_MooringDatabase_{MooringDatabase}/WindSpeed_{WindSpeed}/X_',keys=['Surge','Sway','Heave','Roll','Pitch','Yaw'],allkeys=0)
+    Savefiles(Displacements_dict,path,f'/Turbines_tol_{tolerance}_filter_{filterMS}_MooringDatabase_{MooringDatabase}/WindSpeed_{WindSpeed}/X_',keys=['PermMatrix'],allkeys=0)
+    Savefiles(Displacements0_dict,path,f'/Turbines_tol_{tolerance}_filter_{filterMS}_MooringDatabase_{MooringDatabase}/WindSpeed_{WindSpeed}/X0_',keys=['Surge','Sway','Heave','Roll','Pitch','Yaw'],allkeys=1)
+    Savefiles(Displacements0_dict,path,f'/Turbines_tol_{tolerance}_filter_{filterMS}_MooringDatabase_{MooringDatabase}/WindSpeed_{WindSpeed}/X0_',keys=['PermMatrix'],allkeys=0)
+    Savefiles(Displacements_diff_dict,path,f'/Turbines_tol_{tolerance}_filter_{filterMS}_MooringDatabase_{MooringDatabase}/WindSpeed_{WindSpeed}/Xdiff_',keys=['Surge','Sway'],allkeys=0)
+    
+    layoutdf=pd.read_csv(path1 +r'/BaselineOptimization' +opt_baseline_file)
+    FASTFarm_layout=pd.DataFrame()
+    FASTFarm_layout['x']=layoutdf.x-Displacements0_dict['Surge']
+    FASTFarm_layout['y']=layoutdf.y-Displacements0_dict['Sway']
 
-Savefiles(Displacements_dict,path,f'/Turbines_{no_turbines}/WindSpeed_{WindSpeed}/X_',keys=['Surge','Sway','Heave','Roll','Pitch','Yaw'],allkeys=0)
-Savefiles(Displacements_dict,path,f'/Turbines_{no_turbines}/WindSpeed_{WindSpeed}/X_',keys=['PermMatrix'],allkeys=0)
-Savefiles(Displacements0_dict,path,f'/Turbines_{no_turbines}/WindSpeed_{WindSpeed}/X0_',keys=['Surge','Sway','Heave','Roll','Pitch','Yaw'],allkeys=1)
-Savefiles(Displacements0_dict,path,f'/Turbines_{no_turbines}/WindSpeed_{WindSpeed}/X0_',keys=['PermMatrix'],allkeys=0)
-Savefiles(Displacements_diff_dict,path,f'/Turbines_{no_turbines}/WindSpeed_{WindSpeed}/Xdiff_',keys=['Surge','Sway'],allkeys=0)
-
-layoutdf=pd.read_csv(path1 +r'/BaselineOptimization' +opt_baseline_file)
-FASTFarm_layout=pd.DataFrame()
-FASTFarm_layout['x']=layoutdf.x-Displacements0_dict['Surge']
-FASTFarm_layout['y']=layoutdf.y-Displacements0_dict['Sway']
-# pdb.set_trace()
-
-FASTFarm_layout.to_csv(path+f'/Turbines_{no_turbines}/WindSpeed_{WindSpeed}/FASTFarm_layout.csv', index=False)
+    FASTFarm_layout.to_csv(path+f'/Turbines_tol_{tolerance}_filter_{filterMS}_MooringDatabase_{MooringDatabase}/WindSpeed_{WindSpeed}/FASTFarm_layout.csv', index=False)
